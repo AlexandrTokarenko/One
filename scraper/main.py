@@ -3,35 +3,54 @@ from bs4 import BeautifulSoup
 import csv
 import argparse
 import sys
+import json
+from urllib.parse import urljoin
 
 
-def scrape_quotes(url='http://quotes.toscrape.com'):
+def scrape_quotes(base_url, max_pages=1):
     '''
-    Scrape quotes from quotes.toscrape.com
+    Scrape quotes from quotes.toscrape.com with pagination support
     Returns a list of dictionaries containing quote data
     '''
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        quotes = []
-        
-        for quote_div in soup.find_all('div', class_='quote'):
-            text = quote_div.find('span', class_='text').get_text()
-            author = quote_div.find('small', class_='author').get_text()
-            tags = [tag.get_text() for tag in quote_div.find_all('a', class_='tag')]
+    all_quotes = []
+    current_url = base_url
+    pages_scraped = 0
+    
+    while current_url and pages_scraped < max_pages:
+        try:
+            print(f"Scraping page {pages_scraped + 1}: {current_url}")
+            response = requests.get(current_url)
+            response.raise_for_status()
             
-            quotes.append({
-                'text': text,
-                'author': author,
-                'tags': tags
-            })
-        
-        return quotes
-    except Exception as e:
-        print(f"Error scraping quotes: {e}")
-        return []
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Extract quotes from current page
+            for quote_div in soup.find_all('div', class_='quote'):
+                text = quote_div.find('span', class_='text').get_text()
+                author = quote_div.find('small', class_='author').get_text()
+                tags = [tag.get_text() for tag in quote_div.find_all('a', class_='tag')]
+                
+                all_quotes.append({
+                    'text': text,
+                    'author': author,
+                    'tags': tags
+                })
+            
+            # Find next page link
+            next_link = soup.find('li', class_='next')
+            if next_link:
+                next_href = next_link.find('a')['href']
+                current_url = urljoin(current_url, next_href)
+            else:
+                current_url = None  # No more pages
+                
+            pages_scraped += 1
+            
+        except Exception as e:
+            print(f"Error scraping page {current_url}: {e}")
+            break
+    
+    return all_quotes
 
 
 def save_to_csv(quotes, filename='quotes.csv'):
@@ -60,8 +79,6 @@ def save_to_json(quotes, filename='quotes.json'):
     '''
     Save quotes data to JSON file
     '''
-    import json
-    
     if not quotes:
         print("No quotes to save")
         return
@@ -87,36 +104,17 @@ def main():
     
     print(f"Starting web scraper for {args.url} (max {args.max_pages} pages)...")
     
-    all_quotes = []
-    current_url = args.url
-    pages_scraped = 0
+    quotes = scrape_quotes(args.url, args.max_pages)
     
-    while current_url and pages_scraped < args.max_pages:
-        print(f"Scraping page {pages_scraped + 1}: {current_url}")
-        quotes = scrape_quotes(current_url)
-        
-        if not quotes:
-            print("No quotes found on this page or error occurred")
-            break
-            
-        all_quotes.extend(quotes)
-        pages_scraped += 1
-        
-        # For pagination, we would normally find the next page link
-        # For now, we'll just break after the first page since the demo site
-        # has a specific pagination structure that would need more complex handling
-        # In a real implementation, we would parse the "next" link from the page
-        break
-    
-    if all_quotes:
-        print(f"Scraped {len(all_quotes)} quotes from {pages_scraped} page(s)")
-        for i, quote in enumerate(all_quotes[:3], 1):  # Show first 3
+    if quotes:
+        print(f"Scraped {len(quotes)} quotes")
+        for i, quote in enumerate(quotes[:3], 1):  # Show first 3
             print(f"{i}. {quote['text']} - {quote['author']}")
         
         if args.format == 'csv':
-            save_to_csv(all_quotes, args.output)
+            save_to_csv(quotes, args.output)
         else:
-            save_to_json(all_quotes, args.output)
+            save_to_json(quotes, args.output)
     else:
         print("No quotes scraped")
 
