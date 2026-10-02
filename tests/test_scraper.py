@@ -1,0 +1,1 @@
+import unittest\nfrom scraper.main import scrape_quotes, save_to_csv\n\nclass TestScraper(unittest.TestCase):\n    def test_scrape_quotes_structure(self):\n        # We'll test with a mock later, for now just ensure function exists\n        self.assertTrue(callable(scrape_quotes))\n        self.assertTrue(callable(save_to_csv))\n\nif __name__ == '__main__':\n    unittest.main()
