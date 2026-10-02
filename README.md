@@ -1,1 +1,1 @@
-# Python Web Scraper Project
+# Python Web Scraper Project\n\nThis project demonstrates a simple web scraper built with Python, Requests, and BeautifulSoup4.\n\n## Features\n\n- Scrapes quotes from http://quotes.toscrape.com\n- Extracts quote text, author, and tags\n- Saves data to CSV file\n- Error handling and logging\n\n## Requirements\n\n- Python 3.6+\n- Requests\n- BeautifulSoup4\n\n## Installation\n\n\n\n## Usage\n\n\n\n## Output\n\nThe script creates a  file in the current directory with the scraped data.\n\n## License\n\nMIT\n
