@@ -103,6 +103,13 @@ def save_to_csv(quotes, filename='quotes.csv'):
 def save_to_json(quotes, filename='quotes.json'):
     '''
     Save quotes data to JSON file
+
+    Parameters
+    ----------
+    quotes : list of dict
+        List of quote dictionaries containing 'text', 'author', 'tags'.
+    filename : str, optional
+        Output JSON file path (default: 'quotes.json')
     '''
     if not quotes:
         logger.warning("No quotes to save")
